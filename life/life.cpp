@@ -10,13 +10,16 @@ wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
   EVT_MENU(MNU_CLEAR, MyFrame::On_clear)
 
   EVT_MENU(wxID_EXIT, MyFrame::On_exit)
+
+  EVT_MENU(MNU_SIZE_20, MyFrame::On_20)
+  EVT_MENU(MNU_SIZE_30, MyFrame::On_30)
 wxEND_EVENT_TABLE()
 
 wxIMPLEMENT_APP(MyApp);
 
 bool MyApp::OnInit()
 {
-  MyFrame *frame = new MyFrame("Conway's Game of Life", wxPoint(70, 70), wxSize(500, 500));
+  MyFrame *frame = new MyFrame("Conway's Game of Life", wxPoint(70, 70), wxSize(WIN_SIZE_20, WIN_SIZE_20));
   frame->SetBackgroundColour(wxColour(*wxWHITE));
   
   frame->SetMinSize(frame->GetSize());
@@ -30,26 +33,41 @@ bool MyApp::OnInit()
 MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
                                       :  wxFrame(NULL, wxID_ANY, title, pos, size)
                                        , mouse_x_{}, mouse_y_{}
-                                       , menu_ {nullptr}
-                                       , running_ {false}, stop_{false}
+                                       , menu_game_ {nullptr}, menu_size_{ nullptr }
+                                       , running_ {false}, stop_ {false}, changed_ {false}
                                        , timer_ {new wxTimer(this, 1)}
+                                       , size_ {board_size_t::_20}
 {
-  menu_ = new wxMenu;
+  menu_game_ = new wxMenu;
 
-  menu_->Append(MNU_STEP,  "&Single step\tCtrl-S");
-  menu_->Append(MNU_RUN,   "&Run\tCtrl-R");
-  menu_->Append(MNU_STOP,  "S&top\tCtrl-T");
-  menu_->Append(MNU_CLEAR, "&Clear\tCtrl-C");
+  menu_game_->Append(MNU_STEP,  "&Single step\tCtrl-S");
+  menu_game_->Append(MNU_RUN,   "&Run\tCtrl-R");
+  menu_game_->Append(MNU_STOP,  "S&top\tCtrl-T");
+  menu_game_->Append(MNU_CLEAR, "&Clear\tCtrl-C");
+  
+  menu_game_->Enable(MNU_STOP, FALSE);
+  
+  menu_game_->AppendSeparator();
+  menu_game_->Append(wxID_EXIT);
 
-  menu_->Enable(MNU_STOP, FALSE);
+  menu_size_ = new wxMenu;
 
-  menu_->AppendSeparator();
-  menu_->Append(wxID_EXIT);
+  menu_size_->Append(MNU_SIZE_20, "&20x20");
+  menu_size_->Append(MNU_SIZE_30, "&30x30");
+
+  menu_size_->Enable(MNU_SIZE_20, FALSE);
 
   wxMenuBar *menu_bar = new wxMenuBar;
-  menu_bar->Append(menu_, "&Game");
+  menu_bar->Append(menu_game_, "&Game");
+  menu_bar->Append(menu_size_, "&Size");
   
   SetMenuBar(menu_bar);
+
+  board_map_.resize((size_t)size_);
+  for (size_t i {}; i < (size_t)size_; ++i)
+  {
+    board_map_[i].resize((size_t)size_);
+  }
 
   CreateStatusBar();
   SetStatusText("Ready");
@@ -81,11 +99,71 @@ void MyFrame::On_exit(wxCommandEvent& event)
   Close(true);
 }
 
+void MyFrame::On_20(wxCommandEvent& event)
+{
+  if (size_ == board_size_t::_20)
+  {
+    return;
+  }
+
+  On_stop(event);
+  On_clear(event);
+
+  size_ = board_size_t::_20;
+
+  board_map_.resize((size_t)size_);
+
+  for (size_t i{}; i < (size_t)size_; ++i)
+  {
+    board_map_[i].resize((size_t)size_);
+  }
+
+  this->SetMinSize(wxSize(-1, -1));
+  this->SetMaxSize(wxSize(-1, -1));
+
+  this->SetSize(wxSize(WIN_SIZE_20, WIN_SIZE_20));
+
+  this->SetMinSize(this->GetSize());
+  this->SetMaxSize(this->GetSize());
+
+  menu_size_->Enable(MNU_SIZE_20, FALSE);
+  menu_size_->Enable(MNU_SIZE_30, TRUE);
+}
+
+void MyFrame::On_30(wxCommandEvent& event)
+{
+  if (size_ == board_size_t::_30)
+  {
+    return;
+  }
+
+  On_stop(event);
+  On_clear(event);
+
+  size_ = board_size_t::_30;
+
+  board_map_.resize((size_t)size_);
+
+  for (size_t i{}; i < (size_t)size_; ++i)
+  {
+    board_map_[i].resize((size_t)size_);
+  }
+
+  this->SetMinSize(wxSize(-1, -1));
+  this->SetMaxSize(wxSize(-1, -1));
+
+  this->SetSize(wxSize(WIN_SIZE_30, WIN_SIZE_30));
+
+  this->SetMinSize(this->GetSize());
+  this->SetMaxSize(this->GetSize());
+
+  menu_size_->Enable(MNU_SIZE_30, FALSE);
+  menu_size_->Enable(MNU_SIZE_20, TRUE);
+}
+
 size_t MyFrame::Alive_neighbours(size_t col, size_t row)
 {
   size_t ret {};
-
-  //mutex_.lock();
 
   if (col > 0)
   {
@@ -102,7 +180,7 @@ size_t MyFrame::Alive_neighbours(size_t col, size_t row)
       }
     }
 
-    if (row < COL_ROWS - 1)
+    if (row < (size_t)size_ - 1)
     {
       if (board_map_[col - 1][row + 1])
       {
@@ -119,7 +197,7 @@ size_t MyFrame::Alive_neighbours(size_t col, size_t row)
     }
   }
 
-  if (row < COL_ROWS - 1)
+  if (row < (size_t)size_ - 1)
   {
     if (board_map_[col][row + 1])
     {
@@ -127,7 +205,7 @@ size_t MyFrame::Alive_neighbours(size_t col, size_t row)
     }
   }
 
-  if (col < COL_ROWS - 1)
+  if (col < (size_t)size_ - 1)
   {
     if (board_map_[col + 1][row])
     {
@@ -142,7 +220,7 @@ size_t MyFrame::Alive_neighbours(size_t col, size_t row)
       }
     }
 
-    if (row < COL_ROWS - 1)
+    if (row < (size_t)size_ - 1)
     {
       if (board_map_[col + 1][row + 1])
       {
@@ -151,55 +229,47 @@ size_t MyFrame::Alive_neighbours(size_t col, size_t row)
     }
   }
 
-  //mutex_.unlock();
-
   return ret;
 }
 
 void MyFrame::Do_step()
 {
-  int tmp_map[COL_ROWS][COL_ROWS];
-  
   mutex_.lock();
 
-  for (size_t col{}; col < COL_ROWS; ++col)
-  {
-    for (size_t row{}; row < COL_ROWS; ++row)
-    {
-      tmp_map[col][row] = board_map_[col][row];
-    }
-  }
+  changed_ = false;
 
-  for (size_t col{}; col < COL_ROWS; ++col)
+  std::vector<std::vector<int>> tmp_map = board_map_;
+
+  for (size_t col{}; col < (size_t)size_; ++col)
   {
-    for (size_t row{}; row < COL_ROWS; ++row)
+    for (size_t row{}; row < (size_t)size_; ++row)
     {
       size_t num { Alive_neighbours(col, row) };
 
       if (board_map_[col][row] && num < 2)
       {
         tmp_map[col][row] = 0; // Underpopulation.
+
+        changed_ = true;
       }
       
       if (board_map_[col][row] && num > 3)
       {
         tmp_map[col][row] = 0; // Overpopulation.
+
+        changed_ = true;
       }
 
       if (board_map_[col][row] == 0 && num == 3)
       {
         tmp_map[col][row] = 1; // Reproduction.
+
+        changed_ = true;
       }
     }
   }
 
-  for (size_t col{}; col < COL_ROWS; ++col)
-  {
-    for (size_t row{}; row < COL_ROWS; ++row)
-    {
-      board_map_[col][row] = tmp_map[col][row];
-    }
-  }
+  board_map_ = tmp_map;
 
   mutex_.unlock();
 }
@@ -211,7 +281,19 @@ void MyFrame::On_step(wxCommandEvent& /*event*/)
 
   SetStatusText("Step...");
 
+  menu_size_->Enable(MNU_SIZE_20, FALSE);
+  menu_size_->Enable(MNU_SIZE_30, FALSE);
+
   Do_step();
+
+  if (size_ == board_size_t::_30)
+  {
+    menu_size_->Enable(MNU_SIZE_20, TRUE);
+  }
+  else if (size_ == board_size_t::_20)
+  {
+    menu_size_->Enable(MNU_SIZE_30, TRUE);
+  }
 
   SetStatusText("Ready");
 }
@@ -229,22 +311,36 @@ void MyFrame::Do_run()
 
     this_thread::sleep_for(100ms);
   }
-  while (false == stop_);
+  while (false == stop_ && true == changed_);
   
-  menu_->Enable(MNU_STOP, FALSE);
-  menu_->Enable(MNU_CLEAR, TRUE);
-  menu_->Enable(MNU_RUN, TRUE);
-  menu_->Enable(MNU_STEP, TRUE);
+  menu_game_->Enable(MNU_STOP, FALSE);
+  menu_game_->Enable(MNU_CLEAR, TRUE);
+  menu_game_->Enable(MNU_RUN, TRUE);
+  menu_game_->Enable(MNU_STEP, TRUE);
+
+  if (size_ == board_size_t::_30)
+  {
+    menu_size_->Enable(MNU_SIZE_20, TRUE);
+  }
+  else if (size_ == board_size_t::_20)
+  {
+    menu_size_->Enable(MNU_SIZE_30, TRUE);
+  }
 
   running_ = false;
+
+  SetStatusText("Ready");
 }
 
 void MyFrame::On_run(wxCommandEvent& /*event*/)
 {
-  menu_->Enable(MNU_CLEAR, FALSE);
-  menu_->Enable(MNU_RUN, FALSE);
-  menu_->Enable(MNU_STEP, FALSE);
-  menu_->Enable(MNU_STOP, TRUE);
+  menu_game_->Enable(MNU_CLEAR, FALSE);
+  menu_game_->Enable(MNU_RUN, FALSE);
+  menu_game_->Enable(MNU_STEP, FALSE);
+  menu_game_->Enable(MNU_STOP, TRUE);
+
+  menu_size_->Enable(MNU_SIZE_20, FALSE);
+  menu_size_->Enable(MNU_SIZE_30, FALSE);
 
   thread run_thread(&MyFrame::Do_run, this);
   run_thread.detach();
@@ -265,9 +361,9 @@ void MyFrame::On_clear(wxCommandEvent& /*event*/)
 
   mutex_.lock();
 
-  for (size_t col{}; col < COL_ROWS; ++col)
+  for (size_t col{}; col < (size_t)size_; ++col)
   {
-    for (size_t row{}; row < COL_ROWS; ++row)
+    for (size_t row{}; row < (size_t)size_; ++row)
     {
       board_map_[col][row] = 0;
     }
@@ -301,7 +397,7 @@ void MyFrame::On_mouse(wxMouseEvent& event)
     int col = tmp_x / CELL_SIZE_1;
     int row = tmp_y / CELL_SIZE_1;
 
-    if (col >= COL_ROWS || row >= COL_ROWS)
+    if (col >= (size_t)size_ || row >= (size_t)size_)
     {
       return;
     }
@@ -322,14 +418,16 @@ void MyFrame::Draw_grid(wxPaintDC& dc)
   wxPen pen = wxPen(*wxBLACK, 2);
   dc.SetPen(pen);
 
-  for (size_t x {10}; x <= BOARD_SIZE_1; x += CELL_SIZE_1)
+  size_t board_size { CELL_SIZE_1 * (size_t)size_ + 10 };
+
+  for (size_t x { BOARD_MARGIN }; x <= board_size; x += CELL_SIZE_1)
   {
-    dc.DrawLine(x, 10, x, BOARD_SIZE_1);
+    dc.DrawLine(x, BOARD_MARGIN, x, board_size);
   }
 
-  for (size_t y {10}; y <= BOARD_SIZE_1; y += CELL_SIZE_1)
+  for (size_t y { BOARD_MARGIN }; y <= board_size; y += CELL_SIZE_1)
   {
-    dc.DrawLine(10, y, BOARD_SIZE_1, y);
+    dc.DrawLine(BOARD_MARGIN, y, board_size, y);
   }
 
   pen = wxPen(*wxRED, 10);
@@ -337,9 +435,9 @@ void MyFrame::Draw_grid(wxPaintDC& dc)
 
   mutex_.lock();
 
-  for (size_t col {}; col < COL_ROWS; ++col)
+  for (size_t col {}; col < (size_t)size_; ++col)
   {
-    for (size_t row {}; row < COL_ROWS; ++row)
+    for (size_t row {}; row < (size_t)size_; ++row)
     {
       if (board_map_[col][row] == 1)
       {

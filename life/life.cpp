@@ -1,5 +1,4 @@
 #include "life.hpp"
-//#include <iostream>
 
 using namespace std;
 
@@ -16,6 +15,8 @@ wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
 
   EVT_MENU(MNU_COLOR_RED, MyFrame::On_red)
   EVT_MENU(MNU_COLOR_GREEN, MyFrame::On_green)
+
+  EVT_CLOSE(MyFrame::On_closing)
 wxEND_EVENT_TABLE()
 
 wxIMPLEMENT_APP(MyApp);
@@ -23,6 +24,13 @@ wxIMPLEMENT_APP(MyApp);
 bool MyApp::OnInit()
 {
   MyFrame *frame = new MyFrame("Conway's Game of Life", wxPoint(70, 70), wxSize(WIN_SIZE_20, WIN_SIZE_20));
+
+  if (nullptr == frame)
+  {
+    cerr << "Failed to create a window. Error code 1\n";
+    return false;
+  }
+
   frame->SetBackgroundColour(wxColour(*wxWHITE));
   
   frame->SetMinSize(frame->GetSize());
@@ -43,6 +51,12 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 {
   menu_game_ = new wxMenu;
 
+  if (nullptr == menu_game_)
+  {
+    cerr << "Failed to create menu_game_. Error code 2\n";
+    throw "Failed to create menu_game_. Error code 2\n";
+  }
+
   menu_game_->Append(MNU_STEP,  "&Single step\tCtrl-S");
   menu_game_->Append(MNU_RUN,   "&Run\tCtrl-R");
   menu_game_->Append(MNU_STOP,  "S&top\tCtrl-T");
@@ -55,6 +69,12 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 
   menu_size_ = new wxMenu;
 
+  if (nullptr == menu_size_)
+  {
+    cerr << "Failed to create menu_size_. Error code 3\n";
+    throw "Failed to create menu_size_. Error code 3\n";
+  }
+
   menu_size_->Append(MNU_SIZE_20, "&20x20");
   menu_size_->Append(MNU_SIZE_30, "&30x30");
 
@@ -62,12 +82,25 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 
   menu_color_ = new wxMenu;
 
+  if (nullptr == menu_color_)
+  {
+    cerr << "Failed to create menu_color_. Error code 4\n";
+    throw "Failed to create menu_color_. Error code 4\n";
+  }
+
   menu_color_->Append(MNU_COLOR_RED, "&Red");
   menu_color_->Append(MNU_COLOR_GREEN, "&Green");
 
   menu_color_->Enable(MNU_COLOR_RED, FALSE);
 
   wxMenuBar *menu_bar = new wxMenuBar;
+
+  if (nullptr == menu_bar)
+  {
+    cerr << "Failed to create menu_bar. Error code 5\n";
+    throw "Failed to create menu_bar. Error code 5\n";
+  }
+
   menu_bar->Append(menu_game_, "&Game");
   menu_bar->Append(menu_size_, "&Size");
   menu_bar->Append(menu_color_, "&Color");
@@ -95,6 +128,14 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 MyFrame::~MyFrame()
 {
   delete timer_;
+}
+
+void MyFrame::On_closing(wxCloseEvent& event)
+{
+  // Prevent board_map_ premature destruction.
+  std::lock_guard<std::mutex> lock(mutex_); 
+
+  event.Skip(); // Actual closing.
 }
 
 void MyFrame::On_timer(wxCommandEvent& /*event*/)
@@ -130,8 +171,6 @@ void MyFrame::On_exit(wxCommandEvent& event)
 {
   On_stop(event);
 
-  std::lock_guard<std::mutex> lock(mutex_);
-
   Close(true);
 }
 
@@ -154,6 +193,7 @@ void MyFrame::On_20(wxCommandEvent& event)
     board_map_[i].resize((size_t)size_);
   }
 
+  // Allow resizing.
   this->SetMinSize(wxSize(-1, -1));
   this->SetMaxSize(wxSize(-1, -1));
 
@@ -185,6 +225,7 @@ void MyFrame::On_30(wxCommandEvent& event)
     board_map_[i].resize((size_t)size_);
   }
 
+  // Allow resizing.
   this->SetMinSize(wxSize(-1, -1));
   this->SetMaxSize(wxSize(-1, -1));
 
@@ -413,11 +454,6 @@ void MyFrame::On_mouse(wxMouseEvent& event)
   if (running_)
   {
     return;
-  }
-
-  if (event.Moving())
-  {
-   
   }
 
   if (event.Button(wxMOUSE_BTN_LEFT))

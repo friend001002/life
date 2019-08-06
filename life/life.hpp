@@ -90,7 +90,8 @@ class MyFrame : public wxFrame
 
   void On_timer(wxCommandEvent& event);
 
-  //void Draw_mouse(wxPaintDC& dc);
+  void On_closing(wxCloseEvent& event);
+  
   void Draw_grid(wxPaintDC& dc);
 
   void Do_run();

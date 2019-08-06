@@ -20,6 +20,12 @@ enum class board_size_t : size_t
   _30 = 30
 };
 
+enum class color_t : size_t
+{
+  red = 1,
+  green = 30
+};
+
 enum
 {
   MNU_STEP = 1,
@@ -28,7 +34,10 @@ enum
   MNU_CLEAR,
 
   MNU_SIZE_20,
-  MNU_SIZE_30
+  MNU_SIZE_30,
+
+  MNU_COLOR_RED,
+  MNU_COLOR_GREEN
 };
 
 enum
@@ -73,6 +82,9 @@ class MyFrame : public wxFrame
   void On_20(wxCommandEvent& event);
   void On_30(wxCommandEvent& event);
 
+  void On_red(wxCommandEvent& event);
+  void On_green(wxCommandEvent& event);
+
   void On_paint(wxPaintEvent& event);
   void On_mouse(wxMouseEvent& event);
 
@@ -88,19 +100,17 @@ class MyFrame : public wxFrame
 
   wxDECLARE_EVENT_TABLE();
 
-  /*static const size_t cols_ { 21 };
-  static const size_t rows_ { 20 };*/
-
   int mouse_x_;
   int mouse_y_;
-
-  //int board_map_[COL_ROWS][COL_ROWS];
+  
   std::vector<std::vector<int>> board_map_;
 
   wxMenu *menu_game_;
   wxMenu *menu_size_;
+  wxMenu *menu_color_;
 
   board_size_t size_;
+  color_t      color_;
 
   std::atomic<bool> running_;
   std::atomic<bool> stop_;

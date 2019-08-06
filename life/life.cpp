@@ -13,6 +13,9 @@ wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
 
   EVT_MENU(MNU_SIZE_20, MyFrame::On_20)
   EVT_MENU(MNU_SIZE_30, MyFrame::On_30)
+
+  EVT_MENU(MNU_COLOR_RED, MyFrame::On_red)
+  EVT_MENU(MNU_COLOR_GREEN, MyFrame::On_green)
 wxEND_EVENT_TABLE()
 
 wxIMPLEMENT_APP(MyApp);
@@ -33,10 +36,10 @@ bool MyApp::OnInit()
 MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
                                       :  wxFrame(NULL, wxID_ANY, title, pos, size)
                                        , mouse_x_{}, mouse_y_{}
-                                       , menu_game_ {nullptr}, menu_size_{ nullptr }
+                                       , menu_game_ {nullptr}, menu_size_{ nullptr }, menu_color_ {nullptr}
                                        , running_ {false}, stop_ {false}, changed_ {false}
                                        , timer_ {new wxTimer(this, 1)}
-                                       , size_ {board_size_t::_20}
+                                       , size_ {board_size_t::_20}, color_ {color_t::red}
 {
   menu_game_ = new wxMenu;
 
@@ -57,9 +60,17 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 
   menu_size_->Enable(MNU_SIZE_20, FALSE);
 
+  menu_color_ = new wxMenu;
+
+  menu_color_->Append(MNU_COLOR_RED, "&Red");
+  menu_color_->Append(MNU_COLOR_GREEN, "&Green");
+
+  menu_color_->Enable(MNU_COLOR_RED, FALSE);
+
   wxMenuBar *menu_bar = new wxMenuBar;
   menu_bar->Append(menu_game_, "&Game");
   menu_bar->Append(menu_size_, "&Size");
+  menu_bar->Append(menu_color_, "&Color");
   
   SetMenuBar(menu_bar);
 
@@ -159,6 +170,22 @@ void MyFrame::On_30(wxCommandEvent& event)
 
   menu_size_->Enable(MNU_SIZE_30, FALSE);
   menu_size_->Enable(MNU_SIZE_20, TRUE);
+}
+
+void MyFrame::On_red(wxCommandEvent& /*event*/)
+{
+  color_ = color_t::red;
+
+  menu_color_->Enable(MNU_COLOR_RED, FALSE);
+  menu_color_->Enable(MNU_COLOR_GREEN, TRUE);
+}
+
+void MyFrame::On_green(wxCommandEvent& /*event*/)
+{
+  color_ = color_t::green;
+
+  menu_color_->Enable(MNU_COLOR_RED, TRUE);
+  menu_color_->Enable(MNU_COLOR_GREEN, FALSE);
 }
 
 size_t MyFrame::Alive_neighbours(size_t col, size_t row)
@@ -430,7 +457,15 @@ void MyFrame::Draw_grid(wxPaintDC& dc)
     dc.DrawLine(BOARD_MARGIN, y, board_size, y);
   }
 
-  pen = wxPen(*wxRED, 10);
+  if (color_ == color_t::red)
+  {
+    pen = wxPen(*wxRED, 10);
+  }
+  else if (color_ == color_t::green)
+  {
+    pen = wxPen(wxColor(0, 100, 0), 10);
+  }
+  
   dc.SetPen(pen);
 
   mutex_.lock();

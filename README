@@ -1,4 +1,4 @@
-Compile for Windows (VS 2015)
+Compile for Windows (VS 2017)
 1. Get wxWidgets (libs, includes)
 2. Open life.sln
 3. Go to Project Settings

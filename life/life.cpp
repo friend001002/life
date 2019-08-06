@@ -99,6 +99,29 @@ MyFrame::~MyFrame()
 
 void MyFrame::On_timer(wxCommandEvent& /*event*/)
 {
+  if (running_ == true)
+  {
+    SetStatusText("Running...");
+  }
+  else if (running_ == false)
+  {
+    menu_game_->Enable(MNU_STOP, FALSE);
+    menu_game_->Enable(MNU_CLEAR, TRUE);
+    menu_game_->Enable(MNU_RUN, TRUE);
+    menu_game_->Enable(MNU_STEP, TRUE);
+
+    if (size_ == board_size_t::_30)
+    {
+      menu_size_->Enable(MNU_SIZE_20, TRUE);
+    }
+    else if (size_ == board_size_t::_20)
+    {
+      menu_size_->Enable(MNU_SIZE_30, TRUE);
+    }
+
+    SetStatusText("Ready");
+  }
+
   this->Refresh();
   this->Update();
 }
@@ -106,6 +129,8 @@ void MyFrame::On_timer(wxCommandEvent& /*event*/)
 void MyFrame::On_exit(wxCommandEvent& event)
 {
   On_stop(event);
+
+  std::lock_guard<std::mutex> lock(mutex_);
 
   Close(true);
 }
@@ -330,8 +355,6 @@ void MyFrame::Do_run()
   running_ = true;
   stop_ = false;
 
-  SetStatusText("Running...");
-
   do
   {
     Do_step();
@@ -340,23 +363,7 @@ void MyFrame::Do_run()
   }
   while (false == stop_ && true == changed_);
   
-  menu_game_->Enable(MNU_STOP, FALSE);
-  menu_game_->Enable(MNU_CLEAR, TRUE);
-  menu_game_->Enable(MNU_RUN, TRUE);
-  menu_game_->Enable(MNU_STEP, TRUE);
-
-  if (size_ == board_size_t::_30)
-  {
-    menu_size_->Enable(MNU_SIZE_20, TRUE);
-  }
-  else if (size_ == board_size_t::_20)
-  {
-    menu_size_->Enable(MNU_SIZE_30, TRUE);
-  }
-
   running_ = false;
-
-  SetStatusText("Ready");
 }
 
 void MyFrame::On_run(wxCommandEvent& /*event*/)

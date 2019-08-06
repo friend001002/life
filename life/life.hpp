@@ -93,8 +93,8 @@ class MyFrame : public wxFrame
   //void Draw_mouse(wxPaintDC& dc);
   void Draw_grid(wxPaintDC& dc);
 
-  void MyFrame::Do_run();
-  void MyFrame::Do_step();
+  void Do_run();
+  void Do_step();
 
   size_t Alive_neighbours(size_t col, size_t row);
 
@@ -121,4 +121,4 @@ class MyFrame : public wxFrame
   std::mutex mutex_;
 };
 
-#endif _LIFE_CPP_
+#endif //_LIFE_CPP_

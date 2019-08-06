@@ -1,0 +1,13 @@
+Compile for Windows (VS 2015)
+1. Get wxWidgets (libs, includes)
+2. Open life.sln
+3. Go to Project Settings
+4. Make sure that Configuration (Debug/Release) is what you have in your wxWidgets copy
+5. Make sure that Platform (Win32, x64) is what you have in your wxWidgets copy
+6. Go to General
+7. Make sure that Character Set (Unicode, ...) is what you have in your wxWidgets copy
+8. Go to VC++ Directories
+9. Make sure that Include Directories points out to include and include/msvc directries of your wxWidgets copy
+10. Make sure that Library Directories points out to libs directries of your wxWidgets copy
+11. Go to C/C++->Language
+12. Make sure that Conformance mode is set to No

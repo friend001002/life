@@ -4,6 +4,7 @@
 // For compilers that support precompilation, includes "wx/wx.h".
 #include <wx/wxprec.h>
 //#include <msvc/wx/setup.h>
+#include "wx/colordlg.h"
 
 #ifndef WX_PRECOMP
 #include <wx/wx.h>
@@ -23,7 +24,8 @@ enum class board_size_t : size_t
 enum class color_t : size_t
 {
   red = 1,
-  green = 30
+  green,
+  custom
 };
 
 enum
@@ -37,7 +39,8 @@ enum
   MNU_SIZE_30,
 
   MNU_COLOR_RED,
-  MNU_COLOR_GREEN
+  MNU_COLOR_GREEN,
+  MNU_COLOR_CUSTOM
 };
 
 enum
@@ -84,6 +87,7 @@ class MyFrame : public wxFrame
 
   void On_red(wxCommandEvent& event);
   void On_green(wxCommandEvent& event);
+  void On_custom_color(wxCommandEvent& event);
 
   void On_paint(wxPaintEvent& event);
   void On_mouse(wxMouseEvent& event);
@@ -112,6 +116,7 @@ class MyFrame : public wxFrame
 
   board_size_t size_;
   color_t      color_;
+  wxColourData custom_color_;
 
   std::atomic<bool> running_;
   std::atomic<bool> stop_;

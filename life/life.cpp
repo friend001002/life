@@ -15,6 +15,7 @@ wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
 
   EVT_MENU(MNU_COLOR_RED, MyFrame::On_red)
   EVT_MENU(MNU_COLOR_GREEN, MyFrame::On_green)
+  EVT_MENU(MNU_COLOR_CUSTOM, MyFrame::On_custom_color)
 
   EVT_CLOSE(MyFrame::On_closing)
 wxEND_EVENT_TABLE()
@@ -47,7 +48,7 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
                                        , menu_game_ {nullptr}, menu_size_{ nullptr }, menu_color_ {nullptr}
                                        , running_ {false}, stop_ {false}, changed_ {false}
                                        , timer_ {new wxTimer(this, 1)}
-                                       , size_ {board_size_t::_20}, color_ {color_t::red}
+                                       , size_ {board_size_t::_20}, color_ {color_t::red}, custom_color_ {}
 {
   menu_game_ = new wxMenu;
 
@@ -90,6 +91,7 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 
   menu_color_->Append(MNU_COLOR_RED, "&Red");
   menu_color_->Append(MNU_COLOR_GREEN, "&Green");
+  menu_color_->Append(MNU_COLOR_CUSTOM, "&Custom");
 
   menu_color_->Enable(MNU_COLOR_RED, FALSE);
 
@@ -244,6 +246,7 @@ void MyFrame::On_red(wxCommandEvent& /*event*/)
 
   menu_color_->Enable(MNU_COLOR_RED, FALSE);
   menu_color_->Enable(MNU_COLOR_GREEN, TRUE);
+  menu_color_->Enable(MNU_COLOR_CUSTOM, TRUE);
 }
 
 void MyFrame::On_green(wxCommandEvent& /*event*/)
@@ -252,6 +255,25 @@ void MyFrame::On_green(wxCommandEvent& /*event*/)
 
   menu_color_->Enable(MNU_COLOR_RED, TRUE);
   menu_color_->Enable(MNU_COLOR_GREEN, FALSE);
+  menu_color_->Enable(MNU_COLOR_CUSTOM, TRUE);
+}
+
+void MyFrame::On_custom_color(wxCommandEvent& /*event*/)
+{
+  color_ = color_t::custom;
+
+  menu_color_->Enable(MNU_COLOR_RED, TRUE);
+  menu_color_->Enable(MNU_COLOR_GREEN, TRUE);
+  menu_color_->Enable(MNU_COLOR_CUSTOM, TRUE);
+
+  wxColourDialog dialog(this, &custom_color_);
+
+  dialog.SetTitle(_("Please choose color of the balls"));
+
+  if (dialog.ShowModal() == wxID_OK)
+  {
+    custom_color_ = dialog.GetColourData();
+  }
 }
 
 size_t MyFrame::Alive_neighbours(size_t col, size_t row)
@@ -507,6 +529,10 @@ void MyFrame::Draw_grid(wxPaintDC& dc)
   else if (color_ == color_t::green)
   {
     pen = wxPen(wxColor(0, 100, 0), 10);
+  }
+  else if (color_ == color_t::custom)
+  {
+    pen = wxPen(custom_color_.GetColour(), 10);
   }
   
   dc.SetPen(pen);
